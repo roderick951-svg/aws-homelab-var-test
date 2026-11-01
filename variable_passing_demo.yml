@@ -1,0 +1,44 @@
+---
+- name: Play 1 - Gather and Generate Dynamic Runtime Data
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Generate a unique deployment timestamp and configuration ID
+      set_fact:
+        deployment_id: "deploy-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+        target_environment: "staging-lab"
+
+    - name: Store variables in hostvars for cross-play access
+      set_fact:
+        shared_deployment_id: "{{ deployment_id }}"
+        shared_target_env: "{{ target_environment }}"
+      delegate_to: localhost
+      delegate_facts: true
+
+- name: Play 2 - Consume Cross-Play Variables on Managed Nodes
+  hosts: all
+  gather_facts: true
+  tasks:
+    - name: Display the variables passed from Play 1
+      debug:
+        msg: >
+          Successfully received variables! 
+          Deployment ID is: {{ hostvars['localhost']['shared_deployment_id'] }} 
+          Target Environment is: {{ hostvars['localhost']['shared_target_env'] }}
+          Running on target node: {{ inventory_hostname }} (IP: {{ ansible_default_ipv4.address | default('N/A') }})
+
+    - name: Write the passed deployment variables to a local compliance file
+      copy:
+        content: |
+          # Automated Deployment Audit Record
+          Deployment ID: {{ hostvars['localhost']['shared_deployment_id'] }}
+          Environment: {{ hostvars['localhost']['shared_target_env'] }}
+          Target Host: {{ inventory_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+        dest: "/tmp/ansible_deployment_audit.txt"
+        mode: '0644'
+      register: file_write_status
+
+    - name: Verify file write was successful
+      debug:
+        msg: "Audit log successfully written to /tmp/ansible_deployment_audit.txt with status: {{ file_write_status.changed }}"
