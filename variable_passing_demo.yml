@@ -1,7 +1,7 @@
 ---
 - name: Play 1 - Gather and Generate Dynamic Runtime Data
   hosts: localhost
-  gather_facts: false
+  gather_facts: true
   tasks:
     - name: Generate a unique deployment timestamp and configuration ID
       set_fact:
