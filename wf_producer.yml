@@ -1,0 +1,20 @@
+---
+- name: Play 1 - Produce and Pass Workflow Variables
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Generate a dynamic release version and target tier
+      set_fact:
+        release_version: "v1.4.{{ lookup('pipe', 'date +%Y%m%d%H%M') }}"
+        target_tier: "production-replica"
+
+    - name: Push variables to the AWX workflow engine using set_stats
+      set_stats:
+        data:
+          workflow_release_version: "{{ release_version }}"
+          workflow_target_tier: "{{ target_tier }}"
+        per_host: false
+
+    - name: Display generated stats
+      debug:
+        msg: "Successfully generated and pushed release {{ release_version }} for tier {{ target_tier }}."

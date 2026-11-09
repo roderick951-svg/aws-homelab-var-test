@@ -1,0 +1,23 @@
+---
+- name: Play 2 - Consume Workflow Variables
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Display variables received from the previous job template
+      debug:
+        msg: >
+          Received variables from previous workflow step!
+          Release Version: {{ workflow_release_version | default('Not Found') }}
+          Target Tier: {{ workflow_target_tier | default('Not Found') }}
+          Running on host: {{ inventory_hostname }}
+
+    - name: Write configuration deployment receipt
+      copy:
+        content: |
+          # Workflow Deployment Receipt
+          Release: {{ workflow_release_version }}
+          Tier: {{ workflow_target_tier }}
+          Executed Host: {{ inventory_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 | default('N/A') }}
+        dest: "/tmp/workflow_deployment_receipt.txt"
+        mode: '0644'
